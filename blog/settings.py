@@ -24,8 +24,8 @@ SECRET_KEY = '2t3akoby8)@_n-+5ec#d3yc^j0bu04mv(=m=6)8vm9gsq&l1a4'
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
-
-ALLOWED_HOSTS = []
+# debug  为fasle  白名单必须写点东西
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition
@@ -37,13 +37,18 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    # 注册子应用
 ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    # Django 默认使用Session
+    # 在settings.py文件中，可以设置session数据的存储方式.
+    # 另外session可以保存在数据库、本地缓存( 程序的运行内存中, 全局变量)、文件、redis等
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',
+    # 默认开启CSRF保护
+    # 'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
@@ -103,10 +108,11 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/2.2/topics/i18n/
 
-LANGUAGE_CODE = 'en-us'
-
-TIME_ZONE = 'UTC'
-
+# LANGUAGE_CODE = 'en-us'
+# TIME_ZONE = 'UTC'
+# 主要实为了admin站点的内容服务
+LANGUAGE_CODE = 'zh-hans'
+TIME_ZONE = 'Asia/Shanghai'
 USE_I18N = True
 
 USE_L10N = True
@@ -118,3 +124,42 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/2.2/howto/static-files/
 
 STATIC_URL = '/static/'
+# 我们可以添加这个参数, 用于补全静态文件路径
+# Django 仅在调试模式下（DEBUG=True）能对外提供静态文件。
+# 当DEBUG=False工作在生产模式时，Django不再对外提供静态文件，需要是用collectstatic命令来收集静态文件并交由其他静态文件服务器来提供。
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, 'static_files'),
+]
+"""
+session 存储在数据库中，如下设置可以写，也可以不写，这是默认存储方式。 如果是存放数据库, 一般以db结尾
+如果存储在数据库中，需要在项INSTALLED_APPS中安装Session应用。
+SESSION_ENGINE='django.contrib.sessions.backends.db'
+
+存储在本机内存中，如果丢失则不能找回，比数据库的方式读写更快。
+如果是存放在本地缓存, 一般以cache结尾
+本地缓存会出现问题: 因为是存放在本地的内存中,所以会出现在脱机情况下出现的跨机访问问题:
+SESSION_ENGINE='django.contrib.sessions.backends.cache'
+
+混合存储 优先从本机内存中存取，如果没有则从数据库中存取。
+如果是存放数据库,一般以cached_db结尾
+SESSION_ENGINE='django.contrib.sessions.backends.cached_db'
+如果session没有设置过期时间 那么session有效期将采用系统默认值，默认为两周，
+可以通过在settings.py中设置SESSION_COOKIE_AGE来设置全局默认值。其中 SESSION_COOKIE_AGE的单位是以秒为单位的.
+SESSION_COOKIE_AGE = miao
+"""
+# 我们定义一个cache(本地缓存来存储信息,cahe指定的是redis)
+SESSION_ENGINE = "django.contrib.sessions.backends.cache"
+# 本地的session使用的本地缓存名称是'default', 这个名称就是上面我们配置的caches的名称"default"
+SESSION_CACHE_ALIAS = "default"
+CACHES = {
+    "default": {
+        "BACKEND": "django_redis.cache.RedisCache",
+        # 定义django中redis的位置
+        "LOCATION": "redis://127.0.0.1:6379/1",
+        "OPTIONS": {
+            # django使用redis的默认客户端来进行操作.
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+        }
+    }
+}
+
